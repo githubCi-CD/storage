@@ -1,0 +1,63 @@
+openapi: 3.0.0
+info:
+  title: 원자제 관리 API
+  version: 1.0.0
+
+paths:
+  /api/v1/origin:
+    post:
+      summary: Save a new origin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Origin'
+      responses:
+        '201':
+          description: Origin saved successfully
+          content:
+            application/json:
+              example:
+                id: 1
+                name: "New Origin"
+                price: 1500
+    patch:
+      summary: Modify origin price
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Origin-patch'
+      responses:
+        '202':
+          description: Origin saved successfully
+          content:
+            application/json:
+              example:
+                id: 1
+                name: "Modified Origin"
+                price: 1500
+        '400':
+          description: Origin saved fail
+          content:
+            text/plain:
+              example: "Error: string"
+components:
+  schemas:
+    Origin:
+      type: object
+      properties:
+        name:
+          type: string
+        price:
+          type: integer
+    Origin-patch:
+      type: object
+      properties:
+        id:
+          type: number
+          format: int64
+        price:
+          type: integer
