@@ -34,3 +34,6 @@ spec:
           image: yooase12/simpleapp:app
           ports:
             - containerPort: 8081
+          envFrom:
+            - secretRef:
+                name: db-secret
