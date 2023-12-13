@@ -13,6 +13,7 @@ class OriginRouter(
     @Bean
     fun originRouterFunction(): RouterFunction<ServerResponse> = router {
         "/api/v1/origin".nest {
+            GET("/{id}",originHandler::findOriginById)
             POST("", originHandler::saveOrigin)
             PATCH("", originHandler::updatePrice)
         }

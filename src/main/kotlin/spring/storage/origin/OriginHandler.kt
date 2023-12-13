@@ -11,6 +11,9 @@ class OriginHandler(
     private val originRepository: OriginRepository
 ) {
 
+    fun findOriginById(request: ServerRequest): Mono<ServerResponse> =
+        ServerResponse.ok().body(originRepository.findById(request.pathVariable("id").toLong()), Origin::class.java)
+
     fun saveOrigin(request: ServerRequest): Mono<ServerResponse> =
         request.bodyToMono(Origin::class.java)
             .flatMap { origin ->

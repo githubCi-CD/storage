@@ -4,6 +4,25 @@ info:
   version: 1.0.0
 
 paths:
+  /api/v1/origin/{id}:
+    get:
+      summary: Get origin by ID
+      operationId: findOriginById
+      parameters:
+        - name: id
+          in: path
+          description: ID of the origin to retrieve
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Origin'
   /api/v1/origin:
     post:
       summary: Save a new origin
@@ -12,16 +31,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Origin'
+              $ref: '#/components/schemas/Origin-make'
       responses:
         '201':
           description: Origin saved successfully
           content:
             application/json:
               example:
-                id: 1
-                name: "New Origin"
-                price: 1500
+                $ref: '#/components/schemas/Origin'
     patch:
       summary: Modify origin price
       requestBody:
@@ -46,9 +63,18 @@ paths:
               example: "Error: string"
 components:
   schemas:
+    Origin-make:
+      type: object
+      properties:
+        name:
+          type: string
+        price:
+          type: integer
     Origin:
       type: object
       properties:
+        id:
+          type: integer
         name:
           type: string
         price:
