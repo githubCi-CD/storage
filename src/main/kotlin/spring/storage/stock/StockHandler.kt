@@ -41,7 +41,6 @@ class StockHandler(
                     factoryId = modifiedStock.factoryId
                 )
                     .flatMap { savedStock ->
-                        println("savedStock : ${savedStock}")
                         stockRepository.save(
                             savedStock.combine(modifiedStock)
                         ).toMono()
