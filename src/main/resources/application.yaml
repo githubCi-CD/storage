@@ -3,12 +3,20 @@ server:
   servlet:
     context-path: /
 
-logging:
-  level:
-    io:
-      r2dbc: DEBUG
-
 spring:
+  kafka:
+    topic: "test"
+    consumer:
+      group-id: "test"
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: spring.storage.stock.StockConsumeDto
+    properties:
+      spring.json.trusted.packages: '*'
+    bootstrap-servers: localhost:29092
   r2dbc:
     url: r2dbc:mysql://localhost:3306/tb01
     username: root
