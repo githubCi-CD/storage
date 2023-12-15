@@ -1,10 +1,14 @@
 package spring.storage.stock
 
 import kotlinx.coroutines.reactive.awaitFirst
+import kotlinx.coroutines.reactive.awaitLast
 import kotlinx.coroutines.reactor.awaitSingle
+import kotlinx.coroutines.runBlocking
 import org.springframework.http.MediaType
+import org.springframework.r2dbc.connection.R2dbcTransactionManager
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.reactive.TransactionalOperator
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
 import reactor.core.publisher.Mono
@@ -16,7 +20,8 @@ import kotlin.jvm.optionals.getOrNull
 @Component
 class StockHandler(
     private val stockRepository: StockRepository,
-    private val originRepository: OriginRepository
+    private val originRepository: OriginRepository,
+    private val transactionalOperator: TransactionalOperator
 ) {
 
     fun findByFactoryId(request: ServerRequest): Mono<ServerResponse> {
@@ -31,27 +36,30 @@ class StockHandler(
             )
     }
 
-    @Transactional
     fun saveStock(stockConsumeDto: Mono<StockConsumeDto>): Mono<Stock> =
         stockConsumeDto.flatMap { dto ->
             val modifiedStock = Stock.fromKafkaDto(dto)
             modifiedStock.originId?.let { originId ->
-                stockRepository.findOriginByOriginIdAndFactoryId(
-                    originId = originId,
-                    factoryId = modifiedStock.factoryId
-                )
-                    .flatMap { savedStock ->
-                        stockRepository.save(
-                            savedStock.combine(modifiedStock)
-                        ).toMono()
-                    }
-            } ?: originRepository.findAll()
-                .flatMap { origin ->
-                    stockRepository.save(
-                        modifiedStock.copy(
-                            originId = origin.id
-                        )
+                transactionalOperator.execute {
+                    stockRepository.findOriginByOriginIdAndFactoryId(
+                        originId = originId,
+                        factoryId = modifiedStock.factoryId
                     )
-                }.toMono()
+                        .flatMap { savedStock ->
+                            stockRepository.save(
+                                savedStock.combine(modifiedStock)
+                            )
+                        }
+                }.single()
+            } ?: transactionalOperator.execute {
+                    originRepository.findAll()
+                        .flatMap { origin ->
+                            stockRepository.save(
+                                modifiedStock.copy(
+                                    originId = origin.id
+                                )
+                            )
+                        }
+                }.last()
         }
 }
