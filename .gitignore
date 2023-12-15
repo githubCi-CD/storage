@@ -38,3 +38,4 @@ out/
 
 /.idea/
 /deploy/secret.yaml
+/deploy/pinpoint/*
