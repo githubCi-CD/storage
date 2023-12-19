@@ -56,6 +56,15 @@ class StockHandler(
                                 savedStock.combine(modifiedStock)
                             )
                         }
+                        .switchIfEmpty(
+                            stockRepository.save(
+                                Stock(
+                                    originId = dto.originId,
+                                    factoryId = dto.factoryId,
+                                    count = dto.count
+                                )
+                            )
+                        )
                 }.single()
                     .doOnNext { nextSpan.finish() }
             } ?: transactionalOperator.execute {
