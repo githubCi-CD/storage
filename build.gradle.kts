@@ -28,9 +28,18 @@ repositories {
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("io.github.microutils:kotlin-logging-jvm:2.0.10")
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+
+    // sleuth + zipkin + Netty Reactor내 Tracing을 위한 라이브러리
+    implementation ("io.micrometer:micrometer-tracing-bridge-brave")
+    implementation ("io.zipkin.reporter2:zipkin-reporter-brave")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("io.micrometer:micrometer-registry-prometheus")
+    // R2DBC micrometer auto tracing
+    implementation("org.springframework.experimental:r2dbc-micrometer-spring-boot:1.0.2")
 
     //kafka
     implementation("org.springframework.kafka:spring-kafka")
@@ -45,6 +54,8 @@ dependencies {
     implementation("io.asyncer:r2dbc-mysql:1.0.4")
     implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
     implementation("io.r2dbc:r2dbc-pool:1.0.1.RELEASE")
+    // force proxy version
+    implementation("io.r2dbc:r2dbc-proxy:1.1.0.RELEASE")
 
     compileOnly("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")

@@ -1,19 +1,14 @@
 package spring.storage.stock
 
-import kotlinx.coroutines.reactive.awaitFirst
-import kotlinx.coroutines.reactive.awaitLast
-import kotlinx.coroutines.reactor.awaitSingle
-import kotlinx.coroutines.runBlocking
+import brave.Tracer
+import brave.propagation.TraceContext
+import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
-import org.springframework.r2dbc.connection.R2dbcTransactionManager
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.reactive.TransactionalOperator
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
 import reactor.core.publisher.Mono
-import reactor.kotlin.core.publisher.switchIfEmpty
-import reactor.kotlin.core.publisher.toMono
 import spring.storage.origin.OriginRepository
 import kotlin.jvm.optionals.getOrNull
 
@@ -21,8 +16,10 @@ import kotlin.jvm.optionals.getOrNull
 class StockHandler(
     private val stockRepository: StockRepository,
     private val originRepository: OriginRepository,
-    private val transactionalOperator: TransactionalOperator
+    private val transactionalOperator: TransactionalOperator,
+    private val tracer: Tracer,
 ) {
+    private val log = LoggerFactory.getLogger(StockHandler::class.java)
 
     fun findByFactoryId(request: ServerRequest): Mono<ServerResponse> {
         val factoryId = request.queryParam("factoryId").getOrNull()?.toLong()
@@ -36,9 +33,13 @@ class StockHandler(
             )
     }
 
-    fun saveStock(stockConsumeDto: Mono<StockConsumeDto>): Mono<Stock> =
+    fun saveStock(stockConsumeDto: Mono<StockConsumeDto>, context: TraceContext): Mono<Stock> =
         stockConsumeDto.flatMap { dto ->
             val modifiedStock = Stock.fromKafkaDto(dto)
+            val nextSpan = tracer.newChild(context)
+                .name("saveStock")
+                .start()
+            log.info("modifed stock : $dto")
             modifiedStock.originId?.let { originId ->
                 transactionalOperator.execute {
                     stockRepository.findOriginByOriginIdAndFactoryId(
@@ -51,6 +52,7 @@ class StockHandler(
                             )
                         }
                 }.single()
+                    .doOnNext { nextSpan.finish() }
             } ?: transactionalOperator.execute {
                     originRepository.findAll()
                         .flatMap { origin ->
@@ -61,5 +63,6 @@ class StockHandler(
                             )
                         }
                 }.last()
+                .doOnNext { nextSpan.finish() }
         }
 }
